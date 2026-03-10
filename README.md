@@ -1,0 +1,1 @@
+# ParhuzamosEszkozok_2026
