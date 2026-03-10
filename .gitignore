@@ -1,0 +1,25 @@
+# --- Fordítási fájlok (Build artifacts) ---
+# Objektum fájlok
+*.o
+src/*.o
+
+# Futtatható fájlok (Windows és Linux/Mac)
+*.exe
+gol_opencl
+gol_opencl.exe
+
+# --- Operációs rendszer fájlok ---
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Mac (ha később macOS-en is fordítanád)
+.DS_Store
+
+# --- Kódszerkesztők és IDE-k (Opcionális, de hasznos) ---
+# VS Code
+.vscode/
+
+# Vim / Emacs átmeneti fájlok
+*.swp
+*~
