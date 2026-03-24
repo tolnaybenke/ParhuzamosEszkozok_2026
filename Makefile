@@ -2,7 +2,6 @@ CC = gcc
 CFLAGS = -Iinclude -Wall -O3 -std=gnu99
 LDFLAGS = -lmingw32 -lSDL2main -lSDL2 -lOpenCL -lm
 
-# ITT ADTUK HOZZÁ A src/kernel_loader.c FÁJLT
 SRC = src/main.c src/ocl_utils.c src/sdl_utils.c src/kernel_loader.c
 OBJ = $(SRC:.c=.o)
 TARGET = gol_opencl.exe
