@@ -15,4 +15,4 @@ src/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f src/*.o $(TARGET)
+	-del /Q /F src\*.o $(TARGET)
