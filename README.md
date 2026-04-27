@@ -50,5 +50,34 @@ A C kódban a feladat kiosztása aszinkron módon történik. A CPU definiál eg
 **2. A munka elvégzése (Device oldal)**
 A GPU-n futó kernel kódban nincsenek rácson végigmenő ciklusok. A hardver több ezer magja a SIMT elv alapján egyszerre futtatja le ugyanazt a kódblokkot. A `get_global_id()` függvények segítségével minden egyes futó szál lekérdezi a saját pozícióját a rácsban, és kizárólag a hozzá tartozó memóriacellán végzi el a szomszédság vizsgálatát és az állapotfrissítést.
 
+## Mérésekhez használt hardware
+
+**Processzor:**	11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz   3.19 GHz
+**Memória mérete:**	32,0 GB
+**Videokártya:** NVIDIA GeForce RTX 3050 Ti Laptop GPU (4 GB), Intel(R) Iris(R) Xe Graphics (128 MB)
+
+
 ## Mérések
 A párhuzamosítás hatékonyságának igazolására a program automatizált teljesítményméréseket végez, amelyek során a futási időket és a számítási képességet (MCUPS - Million Cells Updated Per Second) vizsgálja. Az eredményekről SVG grafikonok készülnek.
+A mellékelt grafikonok és adatsorok alapján a szekvenciális (CPU) és a párhuzamos (GPU) végrehajtás összehasonlításakor a következő architekturális és rendszerszintű jelenségek figyelhetők meg:
+
+**1. Rácsméret skálázódása (1000x1000 - 2000x2000)**
+
+A CPU teljesítménye a terhelés növekedésével végig stabil, a szekvenciális végrehajtás áteresztőképessége fixen 203-206 MCUPS között marad. A GPU ezzel szemben egy dinamikus, V-alakú teljesítménygörbét ír le.
+
+* **(1000x1000 - 1200x1200):** A teszt elején a GPU azonnal eléri a maximális potenciálját. 1000x1000-es méretnél a teljesítmény 18 239 MCUPS, ami 88.4-szeres gyorsulást jelent a CPU-hoz képest. A kártya ebben a fázisban "hideg", így maximális órajelen képes üzemelni.
+
+* **(1400x1400 - 1600x1600):** 1400-as rácsméretnél egy drasztikus letörés látható a grafikonon: a teljesítmény hirtelen 3565 MCUPS-ra, a gyorsulás pedig 17.5-szeresre esik vissza. Ennek két oka lehet. Egyrészt az adathalmaz mérete itt éri el azt a kritikus pontot, ahol a videókártya memóriája telítődik a szomszédok egyidejű olvasása miatt. Másrészt a folyamatos maximális terhelés miatt a GPU eléri a fogyasztási vagy hőmérsékleti limitjét, és a driver biztonsági okokból visszaveszi az órajeleket.
+
+* **(1800x1800 - 2000x2000):** Ahogy a rács tovább növekszik, a GPU az alacsonyabb energiaállapot (leszabályozott órajel) ellenére is egyre hatékonyabban tudja beosztani a több millió szálat. A grafikon újra emelkedni kezd, és 2000x2000-es méretnél a teljesítmény visszakapaszkodik 8268 MCUPS-ra (40.2x gyorsulás), bizonyítva, hogy a masszív adatpárhuzamosság még korlátozott hardveres frekvencián is felülmúlja a CPU-t.
+
+**2. Iterációszám skálázódása (Fix 1024x1024 rács)**
+
+Az iterációszám növelése klasszikus esetben egy egyenletesen telítődő görbét eredményezne, azonban a mérési adatok itt is az operációs rendszer és a GPU beavatkozását mutatják.
+
+* **(10 - 100 iteráció):** Alacsony iterációszámnál (10) a gyorsulás 40.9x, mivel a futási idő jelentős részét még a PCIe adatátvitel és a kernel inicializálása (overhead) teszi ki. 100 iterációnál érjük el az ideális egyensúlyt: az indítási költség elaprózódik, a GPU még nem melegszik túl, így a teljesítmény egy hatalmas tüskével eléri a 16 758 MCUPS-ot (a csúcsot jelentő 90.6-szoros gyorsulást).
+
+* **(500 - 2000 iteráció):** 500 iterációnál a teljesítmény ismét beszakad (2867 MCUPS, 13.7x gyorsulás). Ez a jelenség a TDR (Timeout Detection and Recovery) mechanizmusra és az ütemezőre vezethető vissza. Ha az operációs rendszer azt érzékeli, hogy egyetlen kernel túl sokáig (több tizedmásodpercig) tartja 100%-osan lefoglalva a GPU-t megszakítás nélkül, visszaveszi a prioritását, kontextust vált, vagy leszabályozza a kártyát, hogy a grafikus felület ne fagyjon le. Az iterációszám további növelésével (1000, 2000) a hasznos számítási idő aránya ismét javul, így a görbe megkezdi a visszakapaszkodást, elérve a 6239 MCUPS-ot a teszt végére.
+
+Végső konklúzió: A generált grafikonok és mérések egyértelműen igazolják a GPU-alapú OpenCL párhuzamosítás nyers erejét, amely ideális "rövid, de intenzív" Burst terhelések esetén akár 90-szeres gyorsulást is képes produkálni a CPU-hoz képest. Ugyanakkor az adatok vizuális letörései tökéletesen rávilágítanak a GPGPU programozás legnagyobb valós kihívásaira: a tartós csúcsteljesítményt nem csupán az algoritmus hatékonysága, hanem a memóriasávszélesség korlátai, a kártya termikus kerete (Thermal Throttling) és az operációs rendszer biztonsági mechanizmusai is drasztikusan befolyásolják.
+

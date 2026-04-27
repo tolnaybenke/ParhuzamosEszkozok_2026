@@ -34,7 +34,10 @@ void export_svg(const char* filename, const char* title, const char* x_label, co
     int width = 800, height = 400, pad_x = 90, pad_y = 60; // Növelt pad_x a feliratoknak
     double max_y = 0.0001;
     for (int i = 0; i < count; i++) if (y_data[i] > max_y) max_y = y_data[i];
-    max_y *= 1.2; 
+    max_y *= 1.2;
+
+    double min_val = (double)x_data[0];
+    double max_val = (double)x_data[count - 1];
 
     fprintf(fp, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\">\n", width, height);
     fprintf(fp, "<rect width=\"100%%\" height=\"100%%\" fill=\"#f8f9fa\" rx=\"10\"/>\n");
@@ -65,7 +68,7 @@ void export_svg(const char* filename, const char* title, const char* x_label, co
     // Vonal rajzolása
     fprintf(fp, "<polyline fill=\"none\" stroke=\"%s\" stroke-width=\"3\" points=\"", color);
     for(int i = 0; i < count; i++) {
-        int cx = pad_x + (i * (width - 2 * pad_x) / (count - 1));
+        int cx = pad_x + (int)((((double)x_data[i] - min_val) / (max_val - min_val)) * (width - 2 * pad_x));
         int cy = height - pad_y - (int)((y_data[i] / max_y) * (height - 2 * pad_y));
         fprintf(fp, "%d,%d ", cx, cy);
     }
@@ -73,7 +76,7 @@ void export_svg(const char* filename, const char* title, const char* x_label, co
 
     // Pontok
     for(int i = 0; i < count; i++) {
-        int cx = pad_x + (i * (width - 2 * pad_x) / (count - 1));
+        int cx = pad_x + (int)((((double)x_data[i] - min_val) / (max_val - min_val)) * (width - 2 * pad_x));
         int cy = height - pad_y - (int)((y_data[i] / max_y) * (height - 2 * pad_y));
         fprintf(fp, "<circle cx=\"%d\" cy=\"%d\" r=\"5\" fill=\"%s\"/>\n", cx, cy, color);
         fprintf(fp, "<text x=\"%d\" y=\"%d\" font-family=\"Arial\" font-size=\"12\" text-anchor=\"middle\">%d</text>\n", cx, height - pad_y + 20, x_data[i]);
@@ -96,7 +99,10 @@ void export_svg_compare(const char* filename, const char* title, const char* x_l
         if (y_data1[i] > max_y) max_y = y_data1[i];
         if (y_data2[i] > max_y) max_y = y_data2[i];
     }
-    max_y *= 1.2; 
+    max_y *= 1.2;
+
+    double min_val = (double)x_data[0];
+    double max_val = (double)x_data[count - 1];
 
     fprintf(fp, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\">\n", width, height);
     fprintf(fp, "<rect width=\"100%%\" height=\"100%%\" fill=\"#f8f9fa\" rx=\"10\"/>\n");
@@ -124,7 +130,7 @@ void export_svg_compare(const char* filename, const char* title, const char* x_l
     // Vonal 1
     fprintf(fp, "<polyline fill=\"none\" stroke=\"%s\" stroke-width=\"3\" points=\"", color1);
     for(int i = 0; i < count; i++) {
-        int cx = pad_x + (i * (width - 2 * pad_x) / (count - 1));
+        int cx = pad_x + (int)((((double)x_data[i] - min_val) / (max_val - min_val)) * (width - 2 * pad_x));
         int cy = height - pad_y - (int)((y_data1[i] / max_y) * (height - 2 * pad_y));
         fprintf(fp, "%d,%d ", cx, cy);
     }
@@ -133,7 +139,7 @@ void export_svg_compare(const char* filename, const char* title, const char* x_l
     // Vonal 2
     fprintf(fp, "<polyline fill=\"none\" stroke=\"%s\" stroke-width=\"3\" points=\"", color2);
     for(int i = 0; i < count; i++) {
-        int cx = pad_x + (i * (width - 2 * pad_x) / (count - 1));
+        int cx = pad_x + (int)((((double)x_data[i] - min_val) / (max_val - min_val)) * (width - 2 * pad_x));
         int cy = height - pad_y - (int)((y_data2[i] / max_y) * (height - 2 * pad_y));
         fprintf(fp, "%d,%d ", cx, cy);
     }
@@ -141,7 +147,7 @@ void export_svg_compare(const char* filename, const char* title, const char* x_l
 
     // Pontok
     for(int i = 0; i < count; i++) {
-        int cx = pad_x + (i * (width - 2 * pad_x) / (count - 1));
+        int cx = pad_x + (int)((((double)x_data[i] - min_val) / (max_val - min_val)) * (width - 2 * pad_x));
         
         int cy1 = height - pad_y - (int)((y_data1[i] / max_y) * (height - 2 * pad_y));
         fprintf(fp, "<circle cx=\"%d\" cy=\"%d\" r=\"5\" fill=\"%s\"/>\n", cx, cy1, color1);
@@ -151,7 +157,7 @@ void export_svg_compare(const char* filename, const char* title, const char* x_l
         fprintf(fp, "<circle cx=\"%d\" cy=\"%d\" r=\"5\" fill=\"%s\"/>\n", cx, cy2, color2);
         fprintf(fp, "<text x=\"%d\" y=\"%d\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"%s\" text-anchor=\"middle\" dy=\"-10\">%.2f</text>\n", cx, cy2, color2, y_data2[i]);
         
-        fprintf(fp, "<text x=\"%d\" y=\"%d\" font-family=\"Arial\" font-size=\"12\" text-anchor=\"middle\">%d</text>\n", cx, height - pad_y + 20, x_data[i]);
+        fprintf(fp, "<text x=\"%d\" y=\"%d\" font-family=\"Arial\" font-size=\"12\" text-anchor=\"middle\">%d</text>\n", cx, height - pad_y + 20, x_data[i] *x_data[i]); //itt
     }
 
     // Legend
@@ -176,16 +182,16 @@ int main(int argc, char* argv[]) {
 
         // 1. TESZT: Méret skálázódása
         int fixed_iters = 500;
-        int sizes[] = {32, 64, 128, 256, 512, 1024, 2048};
+        int sizes[] = {1000, 1200, 1400, 1600, 1800, 2000};
         int num_sizes = sizeof(sizes) / sizeof(sizes[0]);
 
-        double size_speedups[7];
-        double size_cpu_mcups[7], size_gpu_mcups[7];
-        double size_cpu_time[7], size_gpu_time[7];
+        double size_speedups[6];
+        double size_cpu_mcups[6], size_gpu_mcups[6];
+        double size_cpu_time[6], size_gpu_time[6];
 
         printf("\n=== 1. TESZT: RACS MERET SKALAZODASA (Fix %d iteracio) ===\n", fixed_iters);
         printf("| Meret     | CPU Ido    | GPU Ido    |Gyorsulas| CPU MCUPS| GPU MCUPS|\n");
-        printf("|-----------|------------|------------|----------|----------|----------|\n");
+        printf("|-----------|------------|------------|---------|----------|----------|\n");
         
         for (int i = 0; i < num_sizes; i++) {
             int W = sizes[i], H = sizes[i];
@@ -251,7 +257,7 @@ int main(int argc, char* argv[]) {
 
         printf("\n=== 2. TESZT: ITERACIOSZAM SKALAZODASA (Fix %dx%d racs) ===\n", fixed_W, fixed_H);
         printf("| Iteracio  | CPU Ido    | GPU Ido    |Gyorsulas| CPU MCUPS| GPU MCUPS|\n");
-        printf("|-----------|------------|------------|----------|----------|----------|\n");
+        printf("|-----------|------------|------------|---------|----------|----------|\n");
         
         size_t mem_size = fixed_W * fixed_H * sizeof(unsigned char);
         for (int i = 0; i < num_iters; i++) {
